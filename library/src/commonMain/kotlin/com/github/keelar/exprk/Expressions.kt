@@ -55,7 +55,9 @@ class Expressions {
         }
 
         evaluator.addFunction("round") { arguments ->
-            require(arguments.size == 1) { "round requires one or two arguments" }
+            require(
+                arguments.size == 1 || arguments.size == 2
+            ) { "round requires one or two arguments" }
 
             // If no scale is provided, round to the nearest integer
             val scale = if (arguments.size == 2) arguments[1].longValue() else 0L
@@ -97,9 +99,17 @@ class Expressions {
         }
 
         evaluator.addFunction("log") { arguments ->
-            require(arguments.size == 1) { "log requires one argument" }
+            require(
+                arguments.size == 1 || arguments.size == 2
+            ) { "log requires one or two arguments" }
 
-            log10(arguments.first().doubleValue()).toBigDecimal()
+            // If no base is provided, use the logarithm base 10, otherwise use the provided base
+            if (arguments.size == 1) {
+                log10(arguments.first().doubleValue()).toBigDecimal()
+            } else {
+                val base = arguments[1].doubleValue()
+                log(arguments.first().doubleValue(), base).toBigDecimal()
+            }
         }
 
         evaluator.addFunction("√") { arguments ->
