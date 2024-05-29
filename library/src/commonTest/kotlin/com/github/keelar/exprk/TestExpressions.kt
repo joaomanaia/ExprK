@@ -48,7 +48,7 @@ class TestExpressions {
         val expr = Expressions()
         assertEquals(
             listOf(BigDecimal.ONE.negate(), BigDecimal.ZERO, BigDecimal.ONE).minOrNull(),
-            expr.eval("mIN(-1,0,1)")
+                expr.eval("mIN(-1,0,1)")
         )
 
         assertEquals(

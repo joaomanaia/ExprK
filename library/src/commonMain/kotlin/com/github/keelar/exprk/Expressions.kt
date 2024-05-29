@@ -16,34 +16,98 @@ class Expressions {
 
     init {
         define("π", PI)
+        define("pi", PI)
         define("e", E)
 
-        evaluator.addFunction("ln", object : Function() {
-            override fun call(arguments: List<BigDecimal>): BigDecimal {
-                if (arguments.size != 1)
-                    throw ExpressionException("ln requires one argument")
+        evaluator.addFunction("abs") { arguments ->
+            require(arguments.size == 1) { "abs requires one argument" }
 
-                return log(arguments.first().doubleValue(), E).toBigDecimal()
+            arguments.first().abs()
+        }
+
+        evaluator.addFunction("sum") { arguments ->
+            require(arguments.isNotEmpty()) { "sum requires at least one argument" }
+
+            arguments.reduce { sum, bigDecimal ->
+                sum.add(bigDecimal)
             }
-        })
+        }
 
-        evaluator.addFunction("log", object : Function() {
-            override fun call(arguments: List<BigDecimal>): BigDecimal {
-                if (arguments.size != 1)
-                    throw ExpressionException("log requires one argument")
+        evaluator.addFunction("avg") { arguments ->
+            require(arguments.isNotEmpty()) { "avg requires at least one argument" }
 
-                return log10(arguments.first().doubleValue()).toBigDecimal()
+            arguments.reduce { sum, bigDecimal ->
+                sum.add(bigDecimal)
+            }.divide(arguments.size.toBigDecimal())
+        }
+
+        evaluator.addFunction("floor") { arguments ->
+            require(arguments.size == 1) { "floor requires one argument" }
+
+            val mode = evaluator.decimalMode.copy(roundingMode = RoundingMode.FLOOR)
+            arguments.first().roundSignificand(mode)
+        }
+
+        evaluator.addFunction("ceil") { arguments ->
+            require(arguments.size == 1) { "ceil requires one argument" }
+
+            val mode = evaluator.decimalMode.copy(roundingMode = RoundingMode.CEILING)
+            arguments.first().roundSignificand(mode)
+        }
+
+        evaluator.addFunction("round") { arguments ->
+            require(arguments.size == 1) { "round requires one or two arguments" }
+
+            // If no scale is provided, round to the nearest integer
+            val scale = if (arguments.size == 2) arguments[1].longValue() else 0L
+
+            val mode = evaluator.decimalMode.copy(decimalPrecision = scale)
+            arguments.first().roundSignificand(mode)
+        }
+
+        evaluator.addFunction("min") { arguments ->
+            require(arguments.isNotEmpty()) { "min requires at least one argument" }
+
+            arguments.minOrNull()!!
+        }
+
+        evaluator.addFunction("max") { arguments ->
+            require(arguments.isNotEmpty()) { "max requires at least one argument" }
+
+            arguments.maxOrNull()!!
+        }
+
+        evaluator.addFunction("if") { arguments ->
+            require(arguments.size == 3) { "if requires three arguments" }
+
+            val condition = arguments[0]
+            val thenValue = arguments[1]
+            val elseValue = arguments[2]
+
+            if (condition != BigDecimal.ZERO) {
+                thenValue
+            } else {
+                elseValue
             }
-        })
+        }
 
-        evaluator.addFunction("√", object : Function() {
-            override fun call(arguments: List<BigDecimal>): BigDecimal {
-                if (arguments.size != 1)
-                    throw ExpressionException("square root requires one argument")
+        evaluator.addFunction("ln") { arguments ->
+            require(arguments.size == 1) { "ln requires one argument" }
 
-                return sqrt(arguments.first().doubleValue()).toBigDecimal()
-            }
-        })
+            ln(arguments.first().doubleValue()).toBigDecimal()
+        }
+
+        evaluator.addFunction("log") { arguments ->
+            require(arguments.size == 1) { "log requires one argument" }
+
+            log10(arguments.first().doubleValue()).toBigDecimal()
+        }
+
+        evaluator.addFunction("√") { arguments ->
+            require(arguments.size == 1) { "√ requires one argument" }
+
+            sqrt(arguments.first().doubleValue()).toBigDecimal()
+        }
     }
 
     val precision: Long
@@ -89,19 +153,8 @@ class Expressions {
         return this
     }
 
-    fun addFunction(name: String, function: Function): Expressions {
-        evaluator.addFunction(name, function)
-
-        return this
-    }
-
     fun addFunction(name: String, func: (List<BigDecimal>) -> BigDecimal): Expressions {
-        evaluator.addFunction(name, object : Function() {
-            override fun call(arguments: List<BigDecimal>): BigDecimal {
-                return func(arguments)
-            }
-
-        })
+        evaluator.addFunction(name) { arguments -> func(arguments) }
 
         return this
     }
