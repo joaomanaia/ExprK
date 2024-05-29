@@ -1,38 +1,34 @@
 package com.github.keelar.exprk.internal
 
-import java.math.MathContext
-import com.github.keelar.exprk.ExpressionException
 import com.github.keelar.exprk.internal.TokenType.*
+import com.ionspin.kotlin.bignum.decimal.DecimalMode
+import com.ionspin.kotlin.bignum.decimal.toBigDecimal
 
 private fun invalidToken(c: Char) {
     throw ExpressionException("Invalid token '$c'")
 }
 
-internal class Scanner(private val source: String,
-                       private val mathContext: MathContext) {
-
+internal class Scanner(
+    private val source: String,
+    private val decimalMode: DecimalMode
+) {
     private val tokens: MutableList<Token> = mutableListOf()
     private var start = 0
     private var current = 0
 
     fun scanTokens(): List<Token> {
-        while (!isAtEnd()) {
-            scanToken()
-        }
+        while (!isAtEnd()) scanToken()
 
         tokens.add(Token(EOF, "", null))
         return tokens
     }
 
-    private fun isAtEnd(): Boolean {
-        return current >= source.length
-    }
+    private fun isAtEnd() = current >= source.length
 
     private fun scanToken() {
         start = current
-        val c = advance()
 
-        when (c) {
+        when (val c = advance()) {
             ' ',
             '\r',
             '\t' -> {
@@ -44,9 +40,8 @@ internal class Scanner(private val source: String,
             '/' -> addToken(SLASH)
             '%' -> addToken(MODULO)
             '^' -> addToken(EXPONENT)
-            '√' -> addToken(SQUARE_ROOT)
             '=' -> if (match('=')) addToken(EQUAL_EQUAL) else addToken(ASSIGN)
-            '!' -> if (match('=')) addToken(NOT_EQUAL) else invalidToken(c)
+            '!' -> if (match('=')) addToken(NOT_EQUAL) else addToken(FACTORIAL)
             '>' -> if (match('=')) addToken(GREATER_EQUAL) else addToken(GREATER)
             '<' -> if (match('=')) addToken(LESS_EQUAL) else addToken(LESS)
             '|' -> if (match('|')) addToken(BAR_BAR) else invalidToken(c)
@@ -57,21 +52,23 @@ internal class Scanner(private val source: String,
             else -> {
                 when {
                     c.isDigit() -> number()
-                    c.isAlpha() -> identifier()
+                    c.isAlpha() || c.isOtherIdentifiers() -> identifier()
                     else -> invalidToken(c)
                 }
             }
         }
     }
 
-    private fun isDigit(char: Char,
-                        previousChar: Char = '\u0000',
-                        nextChar: Char = '\u0000'): Boolean {
+    private fun isDigit(
+        char: Char,
+        previousChar: Char = '\u0000',
+        nextChar: Char = '\u0000'
+    ): Boolean {
         return char.isDigit() || when (char) {
-            '.'      -> true
+            '.' -> true
             'e', 'E' -> previousChar.isDigit() && (nextChar.isDigit() || nextChar == '+' || nextChar == '-')
             '+', '-' -> (previousChar == 'e' || previousChar == 'E') && nextChar.isDigit()
-            else     -> false
+            else -> false
         }
     }
 
@@ -84,8 +81,8 @@ internal class Scanner(private val source: String,
         }
 
         val value = source
-                .substring(start, current)
-                .toBigDecimal(mathContext)
+            .substring(start, current)
+            .toBigDecimal(decimalMode = decimalMode)
 
         addToken(NUMBER, value)
     }
@@ -98,13 +95,7 @@ internal class Scanner(private val source: String,
 
     private fun advance() = source[current++]
 
-    private fun peek(): Char {
-        return if (isAtEnd()) {
-            '\u0000'
-        } else {
-            source[current]
-        }
-    }
+    private fun peek(): Char = if (isAtEnd()) '\u0000' else source[current]
 
     private fun peekPrevious(): Char = if (current > 0) source[current - 1] else '\u0000'
 
@@ -131,12 +122,15 @@ internal class Scanner(private val source: String,
         tokens.add(Token(type, text, literal))
     }
 
-    private fun Char.isAlphaNumeric() = isAlpha() || isDigit()
+    private fun Char.isAlphaNumeric() = isAlpha() || isDigit() || isOtherIdentifiers()
 
     private fun Char.isAlpha() = this in 'a'..'z'
             || this in 'A'..'Z'
             || this == '_'
 
-    private fun Char.isDigit() = this == '.' || this in '0'..'9'
+    private fun Char.isOtherIdentifiers() = this == 'π'
+            || this == '√'
+            || this == '!'
 
+    private fun Char.isDigit() = this == '.' || this in '0'..'9'
 }

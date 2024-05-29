@@ -1,13 +1,13 @@
 package com.github.keelar.exprk.internal
 
-import com.github.keelar.exprk.ExpressionException
 import com.github.keelar.exprk.internal.TokenType.*
-import java.math.BigDecimal
-import java.math.MathContext
-import java.math.RoundingMode
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
+import com.ionspin.kotlin.bignum.decimal.DecimalMode
+import com.ionspin.kotlin.bignum.decimal.toBigDecimal
+import kotlin.math.pow
 
-internal class Evaluator() : ExprVisitor<BigDecimal> {
-    internal var mathContext: MathContext = MathContext.DECIMAL64
+internal class Evaluator : ExprVisitor<BigDecimal> {
+    internal var decimalMode: DecimalMode = DecimalMode.DEFAULT
 
     private val variables: LinkedHashMap<String, BigDecimal> = linkedMapOf()
     private val functions: MutableMap<String, Function> = mutableMapOf()
@@ -17,14 +17,12 @@ internal class Evaluator() : ExprVisitor<BigDecimal> {
     }
 
     fun define(name: String, expr: Expr): Evaluator {
-        define(name.toLowerCase(), eval(expr))
-
+        define(name.lowercase(), eval(expr))
         return this
     }
 
     fun addFunction(name: String, function: Function): Evaluator {
-        functions += name.toLowerCase() to function
-
+        functions += name.lowercase() to function
         return this
     }
 
@@ -48,7 +46,8 @@ internal class Evaluator() : ExprVisitor<BigDecimal> {
             BAR_BAR -> left or right
             AMP_AMP -> left and right
             else -> throw ExpressionException(
-                    "Invalid logical operator '${expr.operator.lexeme}'")
+                "Invalid logical operator '${expr.operator.lexeme}'"
+            )
         }
     }
 
@@ -60,8 +59,8 @@ internal class Evaluator() : ExprVisitor<BigDecimal> {
             PLUS -> left + right
             MINUS -> left - right
             STAR -> left * right
-            SLASH -> left.divide(right, mathContext)
-            MODULO -> left.remainder(right, mathContext)
+            SLASH -> left.divide(right, decimalMode)
+            MODULO -> left.remainder(right)
             EXPONENT -> left pow right
             EQUAL_EQUAL -> (left == right).toBigDecimal()
             NOT_EQUAL -> (left != right).toBigDecimal()
@@ -69,10 +68,11 @@ internal class Evaluator() : ExprVisitor<BigDecimal> {
             GREATER_EQUAL -> (left >= right).toBigDecimal()
             LESS -> (left < right).toBigDecimal()
             LESS_EQUAL -> (left <= right).toBigDecimal()
-            else -> throw ExpressionException(
-                    "Invalid binary operator '${expr.operator.lexeme}'")
+            else -> throw ExpressionException("Invalid binary operator '${expr.operator.lexeme}'")
         }
     }
+
+    private fun Int.factorial() = (2..this).fold(1, Int::times)
 
     override fun visitUnaryExpr(expr: UnaryExpr): BigDecimal {
         val right = eval(expr.right)
@@ -81,17 +81,23 @@ internal class Evaluator() : ExprVisitor<BigDecimal> {
             MINUS -> {
                 right.negate()
             }
-            SQUARE_ROOT -> {
-                right.pow(BigDecimal(0.5))
-            }
+
             else -> throw ExpressionException("Invalid unary operator")
+        }
+    }
+
+    override fun visitLeftExpr(expr: LeftExpr): BigDecimal {
+        val left = eval(expr.left)
+
+        return when (expr.operator.type) {
+            FACTORIAL -> left.intValue().factorial().toBigDecimal()
+            else -> throw ExpressionException("Invalid left operator")
         }
     }
 
     override fun visitCallExpr(expr: CallExpr): BigDecimal {
         val name = expr.name
-        val function = functions[name.toLowerCase()] ?:
-                throw ExpressionException("Undefined function '$name'")
+        val function = functions[name.lowercase()] ?: throw ExpressionException("Undefined function '$name'")
 
         return function.call(expr.arguments.map { eval(it) })
     }
@@ -103,8 +109,7 @@ internal class Evaluator() : ExprVisitor<BigDecimal> {
     override fun visitVariableExpr(expr: VariableExpr): BigDecimal {
         val name = expr.name.lexeme
 
-        return variables[name.toLowerCase()] ?:
-                throw ExpressionException("Undefined variable '$name'")
+        return variables[name.lowercase()] ?: throw ExpressionException("Undefined variable '$name'")
     }
 
     override fun visitGroupingExpr(expr: GroupingExpr): BigDecimal {
@@ -143,15 +148,12 @@ internal class Evaluator() : ExprVisitor<BigDecimal> {
         right = right.multiply(signOfRight.toBigDecimal())
         val remainderOfRight = right.remainder(BigDecimal.ONE)
         val n2IntPart = right.subtract(remainderOfRight)
-        val intPow = pow(n2IntPart.intValueExact(), mathContext)
-        val doublePow = BigDecimal(Math
-                .pow(toDouble(), remainderOfRight.toDouble()))
+        val intPow = pow(n2IntPart.intValue())
+        val doublePow = BigDecimal.fromDouble(doubleValue().pow(remainderOfRight.doubleValue()))
 
-        var result = intPow.multiply(doublePow, mathContext)
-        if (signOfRight == -1) result = BigDecimal
-                .ONE.divide(result, mathContext.precision, RoundingMode.HALF_UP)
+        var result = intPow.multiply(doublePow, decimalMode)
+        if (signOfRight == -1) result = BigDecimal.ONE.divide(result, decimalMode)
 
         return result
     }
-
 }

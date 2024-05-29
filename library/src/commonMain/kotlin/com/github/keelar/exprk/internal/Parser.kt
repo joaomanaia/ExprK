@@ -1,11 +1,9 @@
 package com.github.keelar.exprk.internal
 
-import com.github.keelar.exprk.ExpressionException
 import com.github.keelar.exprk.internal.TokenType.*
-import java.math.BigDecimal
+import com.ionspin.kotlin.bignum.decimal.BigDecimal
 
 internal class Parser(private val tokens: List<Token>) {
-
     private var current = 0
 
     fun parse(): Expr {
@@ -126,18 +124,19 @@ internal class Parser(private val tokens: List<Token>) {
             return UnaryExpr(operator, right)
         }
 
-        return sqrt()
+        return factorial()
     }
 
-    private fun sqrt(): Expr {
-        if (match(SQUARE_ROOT)) {
-            val operator = previous()
-            val right = unary()
+    private fun factorial(): Expr {
+        val left = exponent()
 
-            return UnaryExpr(operator, right)
+        if (match(FACTORIAL)) {
+            val operator = previous()
+
+            return LeftExpr(operator, left)
         }
 
-        return exponent()
+        return left
     }
 
     private fun exponent(): Expr {
@@ -243,5 +242,4 @@ internal class Parser(private val tokens: List<Token>) {
     private fun previous() = tokens[current - 1]
 
     private fun previousTwo() = Pair(tokens[current - 2], tokens[current - 1])
-
 }

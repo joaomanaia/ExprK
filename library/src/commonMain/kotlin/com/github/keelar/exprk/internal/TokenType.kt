@@ -1,7 +1,6 @@
 package com.github.keelar.exprk.internal
 
 internal enum class TokenType {
-
     // Basic operators
     PLUS,
     MINUS,
@@ -9,8 +8,8 @@ internal enum class TokenType {
     SLASH,
     MODULO,
     EXPONENT,
-    SQUARE_ROOT,
     ASSIGN,
+    FACTORIAL,
 
     // Logical operators
     EQUAL_EQUAL,
@@ -34,5 +33,4 @@ internal enum class TokenType {
     IDENTIFIER,
 
     EOF
-
 }
