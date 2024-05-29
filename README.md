@@ -1,5 +1,5 @@
 # ExprK
-A simple mathematical expression evaluator for Kotlin and Java, written in Kotlin.
+A simple Kotlin Multiplatform mathematical expression evaluator.
 
 ### Features:
 * Uses BigDecimal for calculations and results
