@@ -1,6 +1,5 @@
 package com.github.keelar.exprk
 
-import com.github.keelar.exprk.internal.*
 import com.github.keelar.exprk.internal.Evaluator
 import com.github.keelar.exprk.internal.Expr
 import com.github.keelar.exprk.internal.Parser
