@@ -1,7 +1,7 @@
 package com.github.keelar.exprk
 
-import org.junit.Test
 import java.math.BigDecimal
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class TestExpressions {
