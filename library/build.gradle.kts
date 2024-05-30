@@ -40,3 +40,7 @@ android {
         minSdk = libs.versions.android.minSdk.get().toInt()
     }
 }
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
