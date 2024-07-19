@@ -1,23 +1,36 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
+import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
 }
 
 kotlin {
-    targetHierarchy.default()
     jvm()
-    androidTarget {
-        publishLibraryVariants("release")
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "1.8"
-            }
-        }
+
+    js(IR) {
+        nodejs()
+        browser()
+        binaries.executable()
     }
+
+    linuxX64()
+    linuxArm64()
+    androidNativeX64()
+    androidNativeX86()
+    androidNativeArm32()
+    androidNativeArm64()
     iosX64()
     iosArm64()
     iosSimulatorArm64()
-    linuxX64()
+    macosX64()
+    macosArm64()
+    mingwX64()
+    wasmJs {
+        browser()
+    }
+    wasmWasi()
 
     sourceSets {
         val commonMain by getting {
@@ -27,20 +40,8 @@ kotlin {
         }
         val commonTest by getting {
             dependencies {
-                implementation(libs.kotlin.test)
+                implementation(kotlin("test"))
             }
         }
     }
-}
-
-android {
-    namespace = "com.github.keelar.exprk"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
-    defaultConfig {
-        minSdk = libs.versions.android.minSdk.get().toInt()
-    }
-}
-
-tasks.withType<Test> {
-    useJUnitPlatform()
 }

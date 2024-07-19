@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 
 class TestExpressions {
     @Test
-    fun `test that scientific notation BigDecimals are parsed and equivalent to the plain representation`() {
+    fun testThatScientificNotationBigDecimalsAreParsedAndEquivalentToThePlainRepresentation() {
         val expr = Expressions()
         val scival = "1E+7".toBigDecimal()
         expr.define("SCIVAL", scival)
@@ -21,7 +21,7 @@ class TestExpressions {
     }
 
     @Test
-    fun `test Scanner will scan scientific form correctly`() {
+    fun testScannerWillScanScientificFormCorrectly() {
         val expr = Expressions()
         assertEquals("1e+7".toBigDecimal().toPlainString(), expr.eval("1E+7").toPlainString())
         assertEquals("1e-7".toBigDecimal().toPlainString(), expr.eval("1E-7").toPlainString())
@@ -31,7 +31,7 @@ class TestExpressions {
     }
 
     @Test
-    fun `test normal expression`() {
+    fun testNormalExpression() {
         val expr = Expressions()
         assertEquals(
             ".123e2".toBigDecimal().add("3212.123e-2".toBigDecimal()).toPlainString(),
@@ -44,7 +44,7 @@ class TestExpressions {
     }
 
     @Test
-    fun `test is functions are ignore case`() {
+    fun testIsFunctionsAreIgnoreCase() {
         val expr = Expressions()
         assertEquals(
             listOf(BigDecimal.ONE.negate(), BigDecimal.ZERO, BigDecimal.ONE).minOrNull(),
@@ -58,7 +58,7 @@ class TestExpressions {
     }
 
     @Test
-    fun `test is variables are ignore case`() {
+    fun testIsVariablesAreIgnoreCase() {
         val expr = Expressions()
         assertEquals(PI.toBigDecimal(), expr.eval("pI"))
         assertEquals(E.toBigDecimal(), expr.eval("E"))
