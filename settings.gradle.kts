@@ -14,4 +14,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "ExprK"
-include(":library")
+include(":exprk")
